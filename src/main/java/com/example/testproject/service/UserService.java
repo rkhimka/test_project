@@ -1,9 +1,6 @@
 package com.example.testproject.service;
 
 import com.example.testproject.entity.UserEntity;
-import com.example.testproject.exception.CustomBadRequestException;
-import com.example.testproject.exception.CustomNotFoundException;
-import com.example.testproject.model.user.User;
 import com.example.testproject.repository.UserRepository;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,8 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -27,33 +23,27 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public void createUser(UserEntity user) throws CustomBadRequestException {
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            throw new CustomBadRequestException(messageSource.getMessage("user.already.exists",
-                    new Object[0], new Locale("en")));
-        }
-        userRepository.save(user);
+    public UserEntity createUser(UserEntity user) {
+        return userRepository.save(user);
     }
 
-    public UserEntity getUser(Long id) throws CustomNotFoundException {
-        if (userRepository.findById(id).isEmpty()) {
-            throw new CustomNotFoundException(messageSource.getMessage("user.not.found",
-                    new Object[0], new Locale("en")));
-        }
-        return userRepository.findById(id).get();
+    public UserEntity findUser(Long id) {
+        Optional<UserEntity> optionalUser = userRepository.findById(id);
+        return optionalUser.orElse(null);
     }
 
-    public List<User> getUsers() {
+    public UserEntity findUser(String email) {
+        Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+        return optionalUser.orElse(null);
+    }
+
+    public List<UserEntity> findAllUsers() {
         List<UserEntity> users = new ArrayList<>();
         userRepository.findAll().forEach(users::add);
-        return users.stream().map(User::toModel).collect(Collectors.toList());
+        return users;
     }
 
-    public void removeUser(Long id) throws CustomNotFoundException {
-        if (userRepository.findById(id).isEmpty()) {
-            throw new CustomNotFoundException(messageSource.getMessage("user.not.found",
-                    new Object[0], new Locale("en")));
-        }
+    public void removeUser(Long id) {
         userRepository.deleteById(id);
     }
 }

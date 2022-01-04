@@ -1,7 +1,7 @@
 package com.example.testproject.model.order;
 
 import com.example.testproject.entity.OrderEntity;
-import com.example.testproject.model.common.ApiResponse;
+import com.example.testproject.model.common.ApiResponse1;
 import lombok.*;
 
 @EqualsAndHashCode(callSuper = false)
@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Order extends ApiResponse {
+public class Order extends ApiResponse1 {
     @EqualsAndHashCode.Exclude
     private Long id;
     private String orderNumber;

@@ -1,6 +1,7 @@
 package com.example.testproject.model.order;
 
-import com.example.testproject.model.common.ApiResponse;
+import com.example.testproject.model.common.ApiResponse1;
+import com.example.testproject.model.order.Order;
 import lombok.*;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrdersList extends ApiResponse {
+public class OrdersList extends ApiResponse1 {
     private List<Order> orders;
     private Integer count;
 }

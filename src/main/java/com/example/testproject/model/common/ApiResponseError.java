@@ -4,17 +4,25 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @Getter
 @Setter
 @Builder
-public class ApiResponseError extends ApiResponse {
-    private List<ApiError> errors;
+public class ApiResponseError {
+    private String code;
+    private String message;
+    private String data;
 
-    public static ApiResponse buildApiResponseError(List<ApiError> errors) {
+    public static ApiResponseError notFound(String message) {
         return ApiResponseError.builder()
-                .errors(errors)
+                .code("NOT_FOUND")
+                .message(message)
+                .build();
+    }
+
+    public static ApiResponseError badRequest(String message) {
+        return ApiResponseError.builder()
+                .code("BAD_REQUEST")
+                .message(message)
                 .build();
     }
 }

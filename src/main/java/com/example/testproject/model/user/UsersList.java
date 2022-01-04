@@ -1,8 +1,8 @@
 package com.example.testproject.model.user;
 
-import com.example.testproject.model.common.ApiResponse;
 import lombok.*;
 
+import javax.validation.Payload;
 import java.util.List;
 
 @Getter
@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsersList extends ApiResponse {
+public class UsersList implements Payload {
     private List<User> users;
     private Integer count;
 }
