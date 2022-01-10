@@ -5,6 +5,7 @@ import com.example.testproject.model.common.ApiResponseError;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.persistence.NonUniqueResultException;
 import java.util.ArrayList;
@@ -20,6 +21,15 @@ public class ExceptionHandler {
         List<ApiResponseError> errors = new ArrayList<>();
         errors.add(ApiResponseError.badRequest(e.getMessage()));
         log.info("Exception message {}", e.getMessage());
+        return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(value = MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<?> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        List<ApiResponseError> errors = new ArrayList<>();
+        String msg = "Invalid input for the field: " + e.getName();
+        errors.add(ApiResponseError.badRequest(msg));
+        log.info("Exception message {}", msg);
         return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
     }
 

@@ -12,5 +12,8 @@ import java.util.List;
 @Builder
 public class UsersList implements Payload {
     private List<User> users;
-    private Integer count;
+    private Integer page;
+    private Integer pages;
+    private Integer pageCount;
+    private Long totalCount;
 }

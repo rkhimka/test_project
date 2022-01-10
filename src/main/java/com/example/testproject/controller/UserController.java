@@ -8,39 +8,51 @@ import com.example.testproject.model.user.User;
 import com.example.testproject.model.user.UsersList;
 import com.example.testproject.service.UserService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.persistence.NonUniqueResultException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
+
+import static com.example.testproject.constants.common.CommonConstants.MAX_ALLOWED_COUNT;
 
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
+    private final UserService userService;
+    private MessageSource messageSource;
 
-    @Autowired
-    private UserService userService;
+    public UserController(UserService userService, MessageSource messageSource) {
+        this.userService = userService;
+        this.messageSource = messageSource;
+    }
 
     @PostMapping("/user")
     public ResponseEntity<?> registerUsers(@RequestBody UserEntity user) {
         log.info("Called method create new user");
         List<ApiResponseError> errors = new ArrayList<>();
         if (user.getEmail() == null) {
-            errors.add(ApiResponseError.badRequest("Field is required: email"));
+            String msg = messageSource.getMessage("field.required", new String[]{"email"}, Locale.ROOT);
+            errors.add(ApiResponseError.badRequest(msg));
             return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
         }
         if (user.getPassword() == null) {
-            errors.add(ApiResponseError.badRequest("Field is required: password"));
+            String msg = messageSource.getMessage("field.required", new String[]{"password"}, Locale.ROOT);
+            errors.add(ApiResponseError.badRequest(msg));
             return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
         }
         if (userService.findUser(user.getEmail()) != null) {
-            String message = String.format("User already exists, email: %s", user.getEmail());
-            throw new NonUniqueResultException(message);
+            String msg = messageSource.getMessage("user.email.exists", new String[]{user.getEmail()}, Locale.ROOT);
+            throw new NonUniqueResultException(msg);
         }
         User newUser = User.toUserModel(userService.createUser(user));
         return ResponseEntity.ok(ApiResponse.okContent(newUser));
@@ -51,25 +63,35 @@ public class UserController {
         log.debug("Called method find user by id {}", id);
         List<ApiResponseError> errors = new ArrayList<>();
         if (userService.findUser(id) == null) {
-            errors.add(ApiResponseError.notFound(String.format("User with id %d not found", id)));
+            String msg = messageSource.getMessage("user.not.found", new Object[]{id}, Locale.ROOT);
+            errors.add(ApiResponseError.notFound(msg));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.apiErrors(errors));
         }
         if (Long.parseLong(id.toString()) == 0) {
-            String message = String.format("Invalid input: %s", id);
-            throw new NonUniqueResultException(message);
+            throw new MethodArgumentTypeMismatchException(null, null, null, null, null);
         }
         return ResponseEntity.ok(ApiResponse.okContent(User.toUserModel(userService.findUser(id))));
     }
 
     @GetMapping("/list")
-    public ResponseEntity<?> getUsersList() {
+    public ResponseEntity<?> getUsersList(
+            @RequestParam(required = false, defaultValue = "1", name = "page") Integer page,
+            @RequestParam(required = false, defaultValue = "10", name = "count") Integer count) {
         log.debug("Called method find all users");
         List<ApiResponseError> errors = new ArrayList<>();
+        if (count > MAX_ALLOWED_COUNT) {
+            String msg = messageSource.getMessage("count.max.value.invalid", null, Locale.ROOT);
+            errors.add(ApiResponseError.badRequest(msg));
+            return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
+        }
         try {
-            List<User> users = userService.findAllUsers().stream().map(User::toUserModel).collect(Collectors.toList());
+            Page<UserEntity> users = userService.findAllUsers(PageRequest.of(page - 1, count));
             return ResponseEntity.ok(ApiResponse.okContent(UsersList.builder()
-                    .users(users)
-                    .count(users.size())
+                    .users(users.stream().map(User::toUserModel).collect(Collectors.toList()))
+                    .page(users.getNumber() + 1)
+                    .pages(users.getTotalPages())
+                    .pageCount(users.getSize())
+                    .totalCount(users.getTotalElements())
                     .build()));
         } catch (SystemException e) {
             errors.add(ApiResponseError.badRequest(e.getMessage()));
@@ -82,7 +104,8 @@ public class UserController {
         log.debug("Called method delete user with id {}", id);
         List<ApiResponseError> errors = new ArrayList<>();
         if (userService.findUser(id) == null) {
-            errors.add(ApiResponseError.notFound(String.format("User with id %d not found", id)));
+            String msg = messageSource.getMessage("user.not.found", new Object[]{id}, Locale.ROOT);
+            errors.add(ApiResponseError.notFound(msg));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.apiErrors(errors));
         }
         userService.removeUser(id);
