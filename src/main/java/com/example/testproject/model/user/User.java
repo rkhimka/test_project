@@ -1,6 +1,7 @@
 package com.example.testproject.model.user;
 
 import com.example.testproject.entity.UserEntity;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import javax.validation.Payload;
@@ -16,12 +17,15 @@ public class User implements Payload {
     private Long id;
     private String name;
     private String email;
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
 
-    public static User toUserModel(UserEntity user) {
+    public static User toUserModel(UserEntity userEntity) {
         return User.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
+                .id(userEntity.getId())
+                .name(userEntity.getName())
+                .email(userEntity.getEmail())
+                .password(userEntity.getPassword())
                 .build();
     }
 }

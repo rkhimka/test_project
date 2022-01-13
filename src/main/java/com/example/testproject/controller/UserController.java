@@ -15,7 +15,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import javax.persistence.NonUniqueResultException;
 import java.util.ArrayList;
@@ -67,9 +66,6 @@ public class UserController {
             String msg = messageSource.getMessage("user.not.found", new Object[]{id}, Locale.ROOT);
             errors.add(ApiResponseError.notFound(msg));
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.apiErrors(errors));
-        }
-        if (Long.parseLong(id.toString()) == 0) {
-            throw new MethodArgumentTypeMismatchException(null, null, null, null, null);
         }
         return ResponseEntity.ok(ApiResponse.okContent(User.toUserModel(userService.findUser(id))));
     }
