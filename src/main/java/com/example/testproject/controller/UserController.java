@@ -10,7 +10,8 @@ import com.example.testproject.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -76,21 +77,23 @@ public class UserController {
     @GetMapping("/list")
     public ResponseEntity<?> getUsersList(
             @RequestParam(required = false, defaultValue = "1", name = "page") Integer page,
-            @RequestParam(required = false, defaultValue = "10", name = "count") Integer count) {
+            @RequestParam(required = false, defaultValue = "10", name = "count") Integer count,
+            @PageableDefault
+                    Pageable pageable) {
         log.debug("Called method find all users");
         List<ApiResponseError> errors = new ArrayList<>();
-        if (count > MAX_ALLOWED_COUNT) {
+        if (pageable.getPageSize() > MAX_ALLOWED_COUNT) {
             String msg = messageSource.getMessage("count.max.value.invalid", null, Locale.ROOT);
             errors.add(ApiResponseError.badRequest(msg));
             return ResponseEntity.badRequest().body(ApiResponse.apiErrors(errors));
         }
         try {
-            Page<UserEntity> users = userService.findAllUsers(PageRequest.of(page - 1, count));
+            Page<UserEntity> users = userService.findAllUsers(pageable);
             return ResponseEntity.ok(ApiResponse.okContent(UsersList.builder()
-                    .users(users.stream().map(User::toUserModel).collect(Collectors.toList()))
+                    .users(users.getContent().stream().map(User::toUserModel).collect(Collectors.toList()))
                     .page(users.getNumber() + 1)
                     .pages(users.getTotalPages())
-                    .pageCount(users.getSize())
+                    .pageCount(users.getNumberOfElements())
                     .totalCount(users.getTotalElements())
                     .build()));
         } catch (SystemException e) {
@@ -109,7 +112,8 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.apiErrors(errors));
         }
         userService.removeUser(id);
-        return ResponseEntity.ok(String.format("User with id: %d was removed successfully", id));
+        String msg = messageSource.getMessage("user.removed.successfully", new Object[]{id}, Locale.ROOT);
+        return ResponseEntity.ok(msg);
 
     }
 }
